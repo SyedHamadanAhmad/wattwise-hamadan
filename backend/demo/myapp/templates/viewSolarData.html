@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Solar Energy Data</h1>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Kilowatt-hours (kWh)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in solar_data %}
+                <tr>
+                    <td>{{ record.timestamp }}</td>
+                    <td>{{ record.kwh }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="2">No data available.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
