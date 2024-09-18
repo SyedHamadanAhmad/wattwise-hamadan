@@ -38,7 +38,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="/Users/atharva_main/Programing_and_Development/Scripts/Django/wattwise-hamadan-main/backend/env"
+VIRTUAL_ENV="/Users/atharva_main/Programing_and_Development/Scripts/Django/wattwise/backend/env"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"

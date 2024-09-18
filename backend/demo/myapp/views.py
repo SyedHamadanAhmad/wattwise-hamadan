@@ -1,66 +1,60 @@
-from django.shortcuts import render
-from .models import *
 import csv
-import io
+from io import StringIO
 from datetime import datetime
+
+from django.shortcuts import render
 from django.utils.dateparse import parse_date
 
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import viewsets, status
-from .serializers import *
 
-# Create your views here.
+from .serializers import *
+from .models import *
 
 
 def home(request):
     return render(request, "home.html")
 
 
+def processCSV(csv_reader):
+    valid_rows = []
+
+    # Process the CSV file
+    for row in csv_reader:
+        if row:
+            try:
+                # Remove timezone information and parse the timestamp
+                timestamp_str = row[0].replace('.000Z', '')
+                timestamp = datetime.strptime(
+                    timestamp_str, '%Y-%m-%d %H:%M:%S')
+
+                kwh = float(row[1])  # Convert kWh to float
+                valid_rows.append((timestamp, kwh))
+
+                # Update or create the database entry
+                SolarEnergyData.objects.update_or_create(
+                    timestamp=timestamp,
+                    defaults={'kwh': kwh}
+                )
+
+            except ValueError as e:
+                # Handle errors in data conversion
+                print(f"Skipping invalid row: {row}. Error: {e}")
+    return valid_rows
+
+
 def excel_input_view(request):
     data = None
 
-    if request.method == 'POST' and request.FILES.get('csv_file'):
-        uploaded_file = request.FILES['csv_file']
+    if request.method == 'POST' and request.FILES.get('file'):
+        uploaded_file = request.FILES['file']
 
         # Read the uploaded CSV file
-        csv_file = io.StringIO(uploaded_file.read().decode('utf-8'))
+        csv_file = StringIO(uploaded_file.read().decode('utf-8'))
         csv_reader = csv.reader(csv_file)
 
-        # Skip header line
-        header = next(csv_reader)
-        print(f"CSV Header: {header}")  # Debugging line
-
-        # Initialize a list to store valid rows
-        valid_rows = []
-
-        # Process the CSV file
-        for row in csv_reader:
-            if row:
-                try:
-                    # Remove timezone information and parse the timestamp
-                    timestamp_str = row[0].replace('.000Z', '')
-                    timestamp = datetime.strptime(
-                        timestamp_str, '%Y-%m-%d %H:%M:%S')
-
-                    kwh = float(row[1])  # Convert kWh to float
-                    valid_rows.append((timestamp, kwh))
-
-                    # Update or create the database entry
-                    SolarEnergyData.objects.update_or_create(
-                        timestamp=timestamp,
-                        defaults={'kwh': kwh}
-                    )
-                    # Debugging line
-                    print(f"Updated or Created Record: {timestamp}, {kwh}")
-
-                except ValueError as e:
-                    # Handle errors in data conversion
-                    print(f"Skipping invalid row: {row}. Error: {e}")
-
-        # Re-fetch data to display
-        solar_data = SolarEnergyData.objects.all()
-        data = valid_rows
+        data = processCSV(csv_reader)
 
     return render(request, 'excelinput.html', {'data': data})
 
@@ -98,3 +92,19 @@ class SolarEnergyDataViewSet(viewsets.ModelViewSet):
 
         serializer = SolarEnergyDataSerializer(data, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['post'])
+    def upload_csv(self, request):
+        data = None
+        file_obj = request.FILES.get('file', None)
+        if not file_obj:
+            return Response({"error": "No file provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            file_data = file_obj.read().decode('utf-8')
+            csv_reader = csv.reader(StringIO(file_data))
+            data = processCSV(csv_reader)
+        except Exception as e:
+            return Response({"error": f"Error reading file: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({"data": data}, status=status.HTTP_201_CREATED)

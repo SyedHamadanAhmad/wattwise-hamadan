@@ -8,7 +8,7 @@ alias deactivate 'test $?_OLD_VIRTUAL_PATH != 0 && setenv PATH "$_OLD_VIRTUAL_PA
 # Unset irrelevant variables.
 deactivate nondestructive
 
-setenv VIRTUAL_ENV "/Users/atharva_main/Programing_and_Development/Scripts/Django/wattwise-hamadan-main/backend/env"
+setenv VIRTUAL_ENV "/Users/atharva_main/Programing_and_Development/Scripts/Django/wattwise/backend/env"
 
 set _OLD_VIRTUAL_PATH="$PATH"
 setenv PATH "$VIRTUAL_ENV/bin:$PATH"

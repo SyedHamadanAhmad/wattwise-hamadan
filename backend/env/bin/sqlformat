@@ -1,4 +1,4 @@
-#!/Users/atharva_main/Programing_and_Development/Scripts/Django/wattwise-hamadan-main/backend/env/bin/python3.11
+#!/Users/atharva_main/Programing_and_Development/Scripts/Django/wattwise/backend/env/bin/python3.11
 # -*- coding: utf-8 -*-
 import re
 import sys
