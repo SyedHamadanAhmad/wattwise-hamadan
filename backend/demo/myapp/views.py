@@ -1,40 +1,20 @@
-import requests
-from django.shortcuts import render, HttpResponse, redirect
-from .models import TodoItem
-from .forms import TodoForm
+from django.shortcuts import render
+from .models import *
 import csv
 import io
-from .models import SolarEnergyData
 from datetime import datetime
+from django.utils.dateparse import parse_date
+
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework import viewsets, status
+from .serializers import *
 
 # Create your views here.
+
+
 def home(request):
     return render(request, "home.html")
-
-def todos(request):
-    items=TodoItem.objects.all()
-    return render(request, "todos.html", {"todos": items})
-
-def add_todo(request):
-      if request.method=="POST":
-            form=TodoForm(request.POST)
-            if form.is_valid():
-                 form.save()
-                 return redirect('todos')
-      form = TodoForm()
-      return render(request, 'addTodo.html', {'form': form})
-
-
-def cat_facts(request):
-      url = "https://catfact.ninja/fact"
-      response=requests.get(url)
-      if response.status_code==200:
-            data=response.json()
-            cat_fact=data['fact']
-      else:
-            cat_fact="Cant get a cat fact at the meowment!"
-      return render(request, "catfact.html", {"cat_fact": cat_fact})
-
 
 
 def excel_input_view(request):
@@ -60,8 +40,9 @@ def excel_input_view(request):
                 try:
                     # Remove timezone information and parse the timestamp
                     timestamp_str = row[0].replace('.000Z', '')
-                    timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
-                    
+                    timestamp = datetime.strptime(
+                        timestamp_str, '%Y-%m-%d %H:%M:%S')
+
                     kwh = float(row[1])  # Convert kWh to float
                     valid_rows.append((timestamp, kwh))
 
@@ -70,7 +51,8 @@ def excel_input_view(request):
                         timestamp=timestamp,
                         defaults={'kwh': kwh}
                     )
-                    print(f"Updated or Created Record: {timestamp}, {kwh}")  # Debugging line
+                    # Debugging line
+                    print(f"Updated or Created Record: {timestamp}, {kwh}")
 
                 except ValueError as e:
                     # Handle errors in data conversion
@@ -83,10 +65,36 @@ def excel_input_view(request):
     return render(request, 'excelinput.html', {'data': data})
 
 
-
 def view_solar_data(request):
     # Fetch all records from the SolarEnergyData model
     solar_data = SolarEnergyData.objects.all()
-    
+
     # Pass the data to the template
     return render(request, 'viewSolarData.html', {'solar_data': solar_data})
+
+
+class SolarEnergyDataViewSet(viewsets.ModelViewSet):
+    queryset = SolarEnergyData.objects.all()
+    serializer_class = SolarEnergyDataSerializer
+
+    @action(detail=False, methods=['get'])
+    def filter_by_dates(self, request):
+        # Get query parameters for start_date and end_date
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+
+        # Validate the date format
+        if not start_date or not end_date:
+            return Response({"error": "Both start_date and end_date are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        start_date_parsed = parse_date(start_date)
+        end_date_parsed = parse_date(end_date)
+
+        if not start_date_parsed or not end_date_parsed:
+            return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+
+        data = SolarEnergyData.objects.filter(
+            timestamp__date__gte=start_date_parsed, timestamp__date__lte=end_date_parsed)
+
+        serializer = SolarEnergyDataSerializer(data, many=True)
+        return Response(serializer.data)
