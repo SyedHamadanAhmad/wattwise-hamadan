@@ -1,43 +1,42 @@
-{% extends "base.html" %}
-
-{% block content %}
+{% extends "base.html" %} {% block content %}
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Upload CSV File</title>
-</head>
-<body>
+  </head>
+  <body>
     <h1>Upload a CSV File</h1>
 
     <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <input type="file" name="csv_file" accept=".csv">
-        <button type="submit">Upload</button>
+      {% csrf_token %}
+      <input type="file" name="file" accept=".csv" />
+      <button type="submit">Upload</button>
     </form>
 
     {% if data %}
-        <h2>Uploaded Data</h2>
-        <table border="1">
-            <thead>
-                <tr>
-                    <th>Timestamp</th>
-                    <th>Kilowatt-hours (kWh)</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in data %}
-                    <tr>
-                        <td>{{ row.0 }}</td>
-                        <td>{{ row.1 }}</td>
-                    </tr>
-                {% empty %}
-                    <tr>
-                        <td colspan="2">No data available.</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% endif %}
-{% endblock %}
+    <h2>Uploaded Data</h2>
+    <table border="1">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Kilowatt-hours (kWh)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in data %}
+        <tr>
+          <td>{{ row.0 }}</td>
+          <td>{{ row.1 }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="2">No data available.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %} {% endblock %}
+  </body>
+</html>
